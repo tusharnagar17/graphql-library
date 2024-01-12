@@ -1,5 +1,6 @@
 const { ApolloServer } = require("@apollo/server");
 const { startStandaloneServer } = require("@apollo/server/standalone");
+const { v1: uuid } = require("uuid");
 
 let authors = [
   {
@@ -79,25 +80,101 @@ let books = [
   },
 ];
 
-/*
-  you can remove the placeholder query once your first one has been implemented 
-*/
+// logic
+const specificAuthors = books.reduce((acc, book) => {
+  if (!acc[book.author]) {
+    acc[book.author] = { name: book.author, bookCount: 0 };
+  }
+  acc[book.author].bookCount++;
+  return acc;
+}, {});
 
 const typeDefs = `
+  type books {
+    title: String!
+    published: Int!
+    author: String!
+    id: ID!
+    genres: [String!]!
+  }
+  type author {
+    name: String!
+    born: Int
+  }
+  type authorAll {
+    name: String! 
+    bookCount: Int!
+    born: Int!
+  }
+
   type Query {
-    dummy: Int
+    bookCount: Int
+    allBooks(author: String, genres: [String!]): [books!]!
+    authorCount: Int
+    allAuthor: [authorAll!]!
+    allAuthorsData: [author!]!
+  }
+  type Mutation {
+    addBook(
+        title: String!
+        published: Int!
+        author: String!
+        genres: [String!]!
+    ): books
+   editAuthor(
+    name: String!
+    setBornTo: Int!
+   ): author
   }
 `;
 
 const resolvers = {
   Query: {
-    dummy: () => 0,
+    bookCount: () => books.length,
+    allBooks: (root, args) => {
+      let filterData = books;
+      if (args.author) {
+        filterData = filterData.filter((data) => data.author === args.author);
+      }
+      if (args.genres && args.genres.length > 0) {
+        filterData = filterData.filter((data) =>
+          args.genres.every((genre) => data.genres.includes(genre))
+        );
+      }
+      return filterData;
+    },
+    authorCount: () => authors.length,
+    allAuthor: () => Object.values(specificAuthors),
+    allAuthorsData: () => authors,
+  },
+  Mutation: {
+    // add book to schema
+    addBook: (root, args) => {
+      const newBook = { ...args, id: uuid };
+      books = books.concat(newBook);
+      return newBook;
+    },
+
+    // edit born year in authors
+    editAuthor: (root, args) => {
+      let person = authors.find((data) => data.name === args.name);
+      if (!person) {
+        return null;
+      }
+
+      const newBornPerson = { ...person, born: args.setBornTo };
+      authors = authors.map((data) =>
+        data.name === args.name ? newBornPerson : data
+      );
+      return newBornPerson;
+    },
   },
 };
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  debug: true,
 });
 
 startStandaloneServer(server, {
