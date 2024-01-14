@@ -81,7 +81,7 @@ let books = [
 ];
 
 // logic
-const specificAuthors = books.reduce((acc, book) => {
+const bookByAuthor = books.reduce((acc, book) => {
   if (!acc[book.author]) {
     acc[book.author] = { name: book.author, bookCount: 0 };
   }
@@ -100,19 +100,17 @@ const typeDefs = `
   type author {
     name: String!
     born: Int
-  }
-  type authorAll {
-    name: String! 
     bookCount: Int!
-    born: Int!
+    id: ID!
+    book: [books!]!
   }
 
   type Query {
     bookCount: Int
     allBooks(author: String, genres: [String!]): [books!]!
     authorCount: Int
-    allAuthor: [authorAll!]!
-    allAuthorsData: [author!]!
+    allAuthor: [author!]!
+ 
   }
   type Mutation {
     addBook(
@@ -144,8 +142,26 @@ const resolvers = {
       return filterData;
     },
     authorCount: () => authors.length,
-    allAuthor: () => Object.values(specificAuthors),
-    allAuthorsData: () => authors,
+    allAuthor: () => {
+      // Group books by author
+      const booksByAuthor = books.reduce((acc, book) => {
+        acc[book.author] = acc[book.author] || {
+          name: book.author,
+          id: book.author,
+          books: [],
+        };
+        acc[book.author].books.push(book);
+        return acc;
+      }, {});
+
+      // Convert the grouped data to an array of authors
+      const newAuthors = Object.values(booksByAuthor).map((author) => ({
+        ...author,
+        bookCount: author.books.length,
+      }));
+
+      return newAuthors;
+    },
   },
   Mutation: {
     // add book to schema
