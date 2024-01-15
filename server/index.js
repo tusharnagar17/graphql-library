@@ -80,15 +80,6 @@ let books = [
   },
 ];
 
-// logic
-const bookByAuthor = books.reduce((acc, book) => {
-  if (!acc[book.author]) {
-    acc[book.author] = { name: book.author, bookCount: 0 };
-  }
-  acc[book.author].bookCount++;
-  return acc;
-}, {});
-
 const typeDefs = `
   type books {
     title: String!

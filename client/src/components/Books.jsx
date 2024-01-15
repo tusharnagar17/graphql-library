@@ -8,7 +8,6 @@ const Books = () => {
   if (result.loading) {
     return <div>loading...</div>;
   }
-  // result.data.allBooks.map((n) => console.log(n.title));
 
   const resultTree = result.data.allBooks.map((n) => {
     return (
