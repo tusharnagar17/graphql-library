@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { GETAUTHORS } from "../graphql/queries";
 import { useMutation, useQuery } from "@apollo/client";
 import { ADD_YEAR } from "../graphql/mutation";
+import ReactSelect from "react-select";
 
 const Author = () => {
   const [formName, setFormName] = useState("");
-  const [formBorn, setFormBorn] = useState("");
+  const [formBorn, setFormBorn] = useState(null);
+  const [formOption, setFormOption] = useState(null);
   const result = useQuery(GETAUTHORS);
   const [add_year] = useMutation(ADD_YEAR, {
     refetchQueries: [{ query: GETAUTHORS }],
@@ -14,18 +16,19 @@ const Author = () => {
     return <div>loading...</div>;
   }
   // result.data.allBooks.map((n) => console.log(n.title));
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 20 }, (_, index) => ({
+    value: currentYear - index,
+    label: `${currentYear - index}`,
+  }));
 
   const handleAuthorForm = async (e) => {
     try {
       e.preventDefault();
-      console.log(
-        "formName and typeof formBorn ==",
-        formName,
-        typeof parseInt(formBorn)
-      );
+      console.log("formName and typeof formBorn ==", formName, formBorn);
 
       const resultData = await add_year({
-        variables: { name: formName, setBornTo: parseInt(formBorn) },
+        variables: { name: formName, setBornTo: formBorn.value },
       });
       console.log(resultData);
       setFormBorn("");
@@ -61,18 +64,26 @@ const Author = () => {
         <h2>Set Birth Year</h2>
         <form onSubmit={handleAuthorForm}>
           Name:
-          <input
-            type="text"
+          <select
             value={formName}
             onChange={({ target }) => setFormName(target.value)}
-          />
+          >
+            <option value="" disabled>
+              Select an option
+            </option>
+            {result.data.allAuthor.map((option, index) => (
+              <option key={option.name} value={option.name}>
+                {option.name}
+              </option>
+            ))}
+          </select>
           <br />
           Born in (yr):
-          <input
-            type="text"
+          <ReactSelect
+            options={years}
             value={formBorn}
-            onChange={({ target }) => {
-              setFormBorn(target.value);
+            onChange={(selectedOption) => {
+              setFormBorn(selectedOption);
             }}
           />
           <br />
