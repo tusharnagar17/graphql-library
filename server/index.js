@@ -134,24 +134,11 @@ const resolvers = {
     },
     authorCount: () => authors.length,
     allAuthor: () => {
-      // Group books by author
-      const booksByAuthor = books.reduce((acc, book) => {
-        acc[book.author] = acc[book.author] || {
-          name: book.author,
-          id: book.author,
-          books: [],
-        };
-        acc[book.author].books.push(book);
-        return acc;
-      }, {});
-
-      // Convert the grouped data to an array of authors
-      const newAuthors = Object.values(booksByAuthor).map((author) => ({
+      return authors.map((author) => ({
         ...author,
-        bookCount: author.books.length,
+        books: books.filter((book) => book.author === author.name),
+        bookCount: books.filter((book) => book.author === author.name).length,
       }));
-
-      return newAuthors;
     },
   },
   Mutation: {
